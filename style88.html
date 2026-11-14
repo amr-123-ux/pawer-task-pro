@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pro Fitness Studio - استوديو التمارين</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --accent-color: #38bdf8;
+      --accent-glow: #22d3ee;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --highlight: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 1100px;
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      color: var(--accent-color);
+      margin-bottom: 8px;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    @media (max-width: 850px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stage-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      border: 1px solid #334155;
+    }
+
+    canvas {
+      background: #090d16;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+      height: 350px;
+      border: 1px solid #1e293b;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 15px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    button {
+      background: #334155;
+      color: var(--text-main);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+
+    button:hover, button.active {
+      background: var(--accent-color);
+      color: #000;
+    }
+
+    .sidebar {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      height: 600px;
+      border: 1px solid #334155;
+    }
+
+    .filter-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .tag {
+      padding: 6px 14px;
+      background: #0f172a;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: 1px solid #334155;
+      color: var(--text-sub);
+    }
+
+    .tag.active {
+      background: var(--accent-color);
+      color: #000;
+      border-color: var(--accent-color);
+      font-weight: bold;
+    }
+
+    .exercise-list {
+      overflow-y: auto;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-left: 5px;
+    }
+
+    .exercise-item {
+      padding: 12px 16px;
+      background: #0f172a;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .exercise-item:hover, .exercise-item.selected {
+      border-color: var(--accent-color);
+      background: #1e293b;
+    }
+
+    .ex-info h4 {
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .ex-info span {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+    }
+
+    .info-box {
+      width: 100%;
+      margin-top: 15px;
+      background: #0f172a;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .info-box h3 {
+      color: var(--accent-color);
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Pro Fitness Studio</h1>
+    <p style="color: var(--text-sub);">استعرض جميع التمارين مع محاكاة حركة الجسم والعضلات</p>
+  </header>
+
+  <div class="container">
+    <div class="stage-card">
+      <canvas id="humanCanvas" width="500" height="350"></canvas>
+      
+      <div class="controls">
+        <button id="playBtn" onclick="togglePlay()">إيقاف / تشغيل الحركة</button>
+        <button onclick="changeSpeed(0.5)">0.5x</button>
+        <button class="active" onclick="changeSpeed(1)">1.0x</button>
+        <button onclick="changeSpeed(1.5)">1.5x</button>
+      </div>
+
+      <div class="info-box" id="infoBox">
+        <h3 id="exTitle">اختر تمرينًا</h3>
+        <p id="exDesc">اختر أي تمرين من القائمة الجانبية لعرض الحركة والعضلات المستهدفة.</p>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="filter-tags" id="filterContainer">
+        <div class="tag active" onclick="filterCategory('All', this)">الكل (30+)</div>
+        <div class="tag" onclick="filterCategory('Arms', this)">الذراعين (Arms)</div>
+        <div class="tag" onclick="filterCategory('Shoulders', this)">الكتف (Shoulders)</div>
+        <div class="tag" onclick="filterCategory('Chest', this)">الصدر (Chest)</div>
+        <div class="tag" onclick="filterCategory('Abs', this)">البطن (Abs)</div>
+        <div class="tag" onclick="filterCategory('Back', this)">الظهر (Back)</div>
+        <div class="tag" onclick="filterCategory('Legs', this)">الأرجل (Legs)</div>
+      </div>
+
+      <div class="exercise-list" id="exerciseList"></div>
+    </div>
+  </div>
+
+  <script>
+    const exercises = [
+      { id: 1, name: "Bicep Curls", cat: "Arms", target: "البايسبس", desc: "تمرين تركيز عضلة الذراع الأمامية باستخدام أوزان." },
+      { id: 2, name: "Hammer Curls", cat: "Arms", target: "البايسبس والساعد", desc: "تطور عضلات البايسبس والساعدين بزاوية قبضة عمودية." },
+      { id: 3, name: "Tricep Dips", cat: "Arms", target: "الترايسبس", desc: "تمرين الاعتماد على وزن الجسم لتقوية الذراع الخلفية." },
+      { id: 4, name: "Skull Crushers", cat: "Arms", target: "الترايسبس", desc: "تمرين عزل للرأس الطويل لعضلة الترايسبس." },
+      { id: 5, name: "Diamond Push-ups", cat: "Arms", target: "الترايسبس والصدر", desc: "ضغطة ضيقة تركز القوة على الترايسبس." },
+      { id: 6, name: "Concentration Curls", cat: "Arms", target: "البايسبس", desc: "عزل كامل للبايسبس بتركيز عالي." },
+
+      { id: 7, name: "Overhead Press", cat: "Shoulders", target: "الكتف الأمامي والمحيطي", desc: "دفع الأوزان لأعلى لبناء كتف عريض وقوي." },
+      { id: 8, name: "Lateral Raises", cat: "Shoulders", target: "الكتف الجانبي", desc: "أفضل تمرين لإعطاء الشكل العريض للكتفين." },
+      { id: 9, name: "Front Raises", cat: "Shoulders", target: "الكتف الأمامي", desc: "يركز على الجزء الأمامي من عضلة الدلتويد." },
+      { id: 10, name: "Pike Push-ups", cat: "Shoulders", target: "الكتف العلوية", desc: "تمرين بوزن الجسم يحاكي ضغط الكتف." },
+      { id: 11, name: "Face Pulls", cat: "Shoulders", target: "الكتف الخلفي", desc: "يحسن استقامة الكتف ويركز على الجزء الخلفي." },
+
+      { id: 12, name: "Standard Push-ups", cat: "Chest", target: "الصدر العام", desc: "التمرين الأساسي لبناء قوة الصدر والجسم العلوي." },
+      { id: 13, name: "Incline Push-ups", cat: "Chest", target: "الصدر السفلي", desc: "تمرين ضغط زاوية مائلة للأسفل." },
+      { id: 14, name: "Decline Push-ups", cat: "Chest", target: "الصدر العلوي", desc: "رفع القدمين للتركيز على أعلى الصدر." },
+      { id: 15, name: "Chest Flyes", cat: "Chest", target: "تجميع الصدر", desc: "تمرين فتح وتجميع لزيادة مرونة وعرض الصدر." },
+
+      { id: 16, name: "Crunches", cat: "Abs", target: "البطن العلوية", desc: "تمرين الضغط المباشر لتقسيم البطن." },
+      { id: 17, name: "Leg Raises", cat: "Abs", target: "البطن السفلي", desc: "رفع الأرجل لتقوية عضلات أسفل البطن." },
+      { id: 18, name: "Plank Hold", cat: "Abs", target: "عضلات الجذع (Core)", desc: "ثبات استاتيكي لتقوية الجذع كاملاً." },
+      { id: 19, name: "Russian Twists", cat: "Abs", target: "عضلات البطن الجانبية", desc: "تدوير الجذع لتشغيل العضلات المائلة." },
+      { id: 20, name: "Mountain Climbers", cat: "Abs", target: "البطن والياقة", desc: "حركة سريعة تحرق الدهون وتقوي البطن." },
+
+      { id: 21, name: "Pull-ups", cat: "Back", target: "الظهر العريض (Lats)", desc: "التمرين الأفضل لعرض الظهر وبنائه." },
+      { id: 22, name: "Bent-Over Rows", cat: "Back", target: "منتصف الظهر", desc: "سحب الأوزان للداخل لسُمك الظهر." },
+      { id: 23, name: "Supermans", cat: "Back", target: "أسفل الظهر", desc: "تقوية عضلات القطنية والعمود الفقري." },
+      { id: 24, name: "Lat Pulldowns", cat: "Back", target: "الظهر العريض", desc: "سحب علوي للتركيز على عضلة اللاتس." },
+
+      { id: 25, name: "Bodyweight Squats", cat: "Legs", target: "الرباعية (Quads)", desc: "التمرين الملكي لتقوية الأرجل والركب." },
+      { id: 26, name: "Lunges", cat: "Legs", target: "الأرجل والمانع", desc: "خطوات للأمام لتقوية كل رجل بشكل منفصل." },
+      { id: 27, name: "Calf Raises", cat: "Legs", target: "السمانة", desc: "رفع الجسم على أطراف الأصابع لتقوية السمانة." },
+      { id: 28, name: "Glute Bridges", cat: "Legs", target: "الأرجل الخلفية", desc: "رفع الحوض لتقوية الجزء الخلفي والهامسترينج." },
+      { id: 29, name: "Sumo Squats", cat: "Legs", target: "العضلات الضامة", desc: "سكوات بفتحة رجلين عريضة لداخل الفخذ." },
+      { id: 30, name: "Wall Sit", cat: "Legs", target: "تحمل الأرجل", desc: "ثبات على الحائط لبناء قوة التحمل." }
+    ];
+
+    let currentExercise = exercises[0];
+    let isPlaying = true;
+    let speed = 1.0;
+    let animFrame = 0;
+
+    const canvas = document.getElementById('humanCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function renderList(category = 'All') {
+      const listEl = document.getElementById('exerciseList');
+      listEl.innerHTML = '';
+
+      const filtered = category === 'All' 
+        ? exercises 
+        : exercises.filter(e => e.cat === category);
+
+      filtered.forEach(ex => {
+        const item = document.createElement('div');
+        item.className = `exercise-item ${ex.id === currentExercise.id ? 'selected' : ''}`;
+        item.onclick = () => selectExercise(ex);
+        item.innerHTML = `
+          <div class="ex-info">
+            <h4>${ex.name}</h4>
+            <span>${ex.target}</span>
+          </div>
+          <span style="font-size:0.75rem; color:var(--accent-color);">${ex.cat}</span>
+        `;
+        listEl.appendChild(item);
+      });
+    }
+
+    function filterCategory(cat, el) {
+      document.querySelectorAll('.filter-tags .tag').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      renderList(cat);
+    }
+
+    function selectExercise(ex) {
+      currentExercise = ex;
+      document.getElementById('exTitle').innerText = `${ex.name} (${ex.target})`;
+      document.getElementById('exDesc').innerText = ex.desc;
+      const activeTag = document.querySelector('.filter-tags .tag.active').innerText.split(' ')[0];
+      renderList(activeTag === 'الكل' ? 'All' : activeTag);
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      document.getElementById('playBtn').innerText = isPlaying ? "إيقاف الحركة" : "تشغيل الحركة";
+    }
+
+    function changeSpeed(s) {
+      speed = s;
+      document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function drawHumanoid(frame) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2 + 20;
+      const cycle = Math.sin(frame * 0.05 * speed);
+
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      const defaultColor = '#64748b';
+      const highlightColor = '#ef4444';
+
+      let armColor = currentExercise.cat === 'Arms' ? highlightColor : defaultColor;
+      let shoulderColor = currentExercise.cat === 'Shoulders' ? highlightColor : defaultColor;
+      let chestColor = currentExercise.cat === 'Chest' ? highlightColor : defaultColor;
+      let absColor = currentExercise.cat === 'Abs' ? highlightColor : defaultColor;
+      let legColor = currentExercise.cat === 'Legs' ? highlightColor : defaultColor;
+
+      let headY = centerY - 100;
+      let torsoY = centerY - 30;
+      let hipY = centerY + 30;
+      
+      let armAngle = cycle * 0.8;
+      let legAngle = cycle * 0.4;
+
+      if (currentExercise.cat === 'Legs') {
+        hipY += Math.abs(cycle) * 20;
+        headY += Math.abs(cycle) * 20;
+        torsoY += Math.abs(cycle) * 20;
+      }
+
+      ctx.beginPath();
+      ctx.arc(centerX, headY, 18, 0, Math.PI * 2);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fill();
+      ctx.strokeStyle = '#334155';
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, headY + 18);
+      ctx.lineTo(centerX, hipY);
+      ctx.strokeStyle = (chestColor !== defaultColor) ? chestColor : (absColor !== defaultColor ? absColor : defaultColor);
+      ctx.lineWidth = 14;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX - 35, headY + 30);
+      ctx.lineTo(centerX + 35, headY + 30);
+      ctx.strokeStyle = shoulderColor;
+      ctx.lineWidth = 10;
+      ctx.stroke();
+
+      ctx.lineWidth = 7;
+      ctx.strokeStyle = armColor;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX - 35, headY + 30);
+      let elbowX = centerX - 55 - Math.sin(armAngle) * 20;
+      let elbowY = headY + 60 + Math.cos(armAngle) * 10;
+      ctx.lineTo(elbowX, elbowY);
+      ctx.lineTo(elbowX - 10, elbowY + 35);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX + 35, headY + 30);
+      let elbowX2 = centerX + 55 + Math.sin(armAngle) * 20;
+      let elbowY2 = headY + 60 + Math.cos(armAngle) * 10;
+      ctx.lineTo(elbowX2, elbowY2);
+      ctx.lineTo(elbowX2 + 10, elbowY2 + 35);
+      ctx.stroke();
+
+      ctx.strokeStyle = legColor;
+      ctx.lineWidth = 8;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX - 12, hipY);
+      let kneeY = hipY + 45 + Math.abs(legAngle) * 10;
+      ctx.lineTo(centerX - 20, kneeY);
+      ctx.lineTo(centerX - 22, kneeY + 45);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX + 12, hipY);
+      let kneeY2 = hipY + 45 + Math.abs(legAngle) * 10;
+      ctx.lineTo(centerX + 20, kneeY2);
+      ctx.lineTo(centerX + 22, kneeY2 + 45);
+      ctx.stroke();
+    }
+
+    function animate() {
+      if (isPlaying) {
+        animFrame++;
+      }
+      drawHumanoid(animFrame);
+      requestAnimationFrame(animate);
+    }
+
+    renderList('All');
+    selectExercise(exercises[0]);
+    animate();
+  </script>
+</body>
+</html>
